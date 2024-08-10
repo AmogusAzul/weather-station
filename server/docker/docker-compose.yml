@@ -1,0 +1,74 @@
+services:
+
+  db:
+    image: mysql:9.0
+    container_name: mysql-database
+
+    volumes:
+      - data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+
+      - DB_DATA_SERVER_USER=${DB_DATA_SERVER_USER}
+      - DB_DATA_SERVER_PASSWORD=${DB_DATA_SERVER_PASSWORD}
+
+      - DB_USER_SERVER_USER=${DB_USER_SERVER_USER}
+      - DB_USER_SERVER_PASSWORD=${DB_USER_SERVER_PASSWORD}
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_ROOT_PASSWORD}", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+    networks:
+      - db-network
+
+
+
+  data-server:
+    build:
+      context: ../data-server
+      dockerfile: ../docker/data-server/Dockerfile
+    container_name: data-server
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=${DB_DATA_SERVER_USER}  # Change this to the appropriate user as needed
+      - DB_PASSWORD=${DB_DATA_SERVER_PASSWORD}  # Change this to the appropriate password as needed
+      - DB_NAME=${MYSQL_DATABASE}
+
+    depends_on:
+      - db
+    networks:
+      - db-network
+
+
+
+volumes:
+  data:
+
+networks:
+  db-network:
+    driver: bridge
+  
