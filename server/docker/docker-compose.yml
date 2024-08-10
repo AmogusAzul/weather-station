@@ -6,7 +6,8 @@ services:
 
     volumes:
       - data:/var/lib/mysql
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql/tables_init.sh:/docker-entrypoint-initdb.d/tables_init.sh
+      - ./mysql/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
       - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
 
     logging:
@@ -27,7 +28,7 @@ services:
       - DB_USER_SERVER_PASSWORD=${DB_USER_SERVER_PASSWORD}
 
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_ROOT_PASSWORD}", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 30s
       timeout: 10s
       retries: 5
