@@ -63,6 +63,8 @@ services:
       - db
     networks:
       - db-network
+    ports:
+      - "8080:8080"
 
 
 
