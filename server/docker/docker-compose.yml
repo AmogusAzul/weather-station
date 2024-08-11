@@ -54,7 +54,7 @@ services:
 
     environment:
       - DB_HOST=db
-      - DB_PORT=3306
+      - DB_PORT=${DB_PORT}
       - DB_USER=${DB_DATA_SERVER_USER}  # Change this to the appropriate user as needed
       - DB_PASSWORD=${DB_DATA_SERVER_PASSWORD}  # Change this to the appropriate password as needed
       - DB_NAME=${MYSQL_DATABASE}
