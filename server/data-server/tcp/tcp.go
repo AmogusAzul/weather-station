@@ -47,7 +47,7 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 
 	go func() {
 
-		<-sl.KillChan
+		<-sl.killChan
 		sl.listener.Close()
 
 		wg.Done()
@@ -56,5 +56,5 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 }
 
 func (sl *StationListener) Close() {
-	sl.KillChan <- true
+	sl.killChan <- true
 }
