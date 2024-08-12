@@ -9,12 +9,12 @@ import (
 type StationListener struct {
 	listener net.Listener
 
-	JobQueue chan net.Conn
+	JobQueue chan<- net.Conn
 
 	killChan chan bool
 }
 
-func GetStationLister(port string, jobQueue chan net.Conn) *StationListener {
+func GetStationLister(port string, jobQueue chan<- net.Conn) *StationListener {
 
 	listener, err := net.Listen("tcp", ":"+port)
 
@@ -48,7 +48,10 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 	go func() {
 
 		<-sl.killChan
+		close(sl.killChan)
+
 		sl.listener.Close()
+		close(sl.JobQueue)
 
 		wg.Done()
 
