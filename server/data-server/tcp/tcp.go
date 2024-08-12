@@ -11,7 +11,7 @@ type StationListener struct {
 
 	JobQueue chan net.Conn
 
-	KillChan chan bool
+	killChan chan bool
 }
 
 func GetStationLister(port string, jobQueue chan net.Conn) *StationListener {
