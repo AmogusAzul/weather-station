@@ -6,8 +6,8 @@ services:
 
     volumes:
       - data:/var/lib/mysql
-      - ./mysql/tables_init.sh:/docker-entrypoint-initdb.d/tables_init.sh
-      - ./mysql/user_init.sh:/docker-entrypoint-initdb.d/user_init.sh
+      - ./mysql/tables-init.sh:/docker-entrypoint-initdb.d/tables-init.sh
+      - ./mysql/user-init.sh:/docker-entrypoint-initdb.d/user-init.sh
       - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
 
     logging:
@@ -41,9 +41,12 @@ services:
 
   data-server:
     build:
-      context: ../data-server
-      dockerfile: ../docker/data-server/Dockerfile
+      context: ../
+      dockerfile: ./docker/data-server/Dockerfile
     container_name: data-server
+
+    volumes:
+      - ../data-server${TOKEN_PATH}:${TOKEN_PATH}
 
     logging:
       driver: "json-file"
@@ -58,6 +61,8 @@ services:
       - DB_USER=${DB_DATA_SERVER_USER}  # Change this to the appropriate user as needed
       - DB_PASSWORD=${DB_DATA_SERVER_PASSWORD}  # Change this to the appropriate password as needed
       - DB_NAME=${MYSQL_DATABASE}
+
+      - TOKEN_PATH=${TOKEN_PATH}
 
     depends_on:
       - db

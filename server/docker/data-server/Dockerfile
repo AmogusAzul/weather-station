@@ -3,14 +3,14 @@ FROM golang:alpine3.20 AS builder
 WORKDIR /app
 
 # Copy the Go module files
-COPY ./go.mod ./
+COPY ./data-server/go.mod ./
 #COPY ./go.sum ./    
 
 # Download the Go module dependencies
 RUN go mod download
 
 # Copy the rest of the application code
-COPY . .
+COPY ./data-server .
 
 # Build the Go application
 RUN go build -o data-server .
