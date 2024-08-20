@@ -11,7 +11,7 @@ import (
 
 type Saver struct {
 	tokens      map[int]string
-	tokenLength int
+	TokenLength int
 
 	savePath string
 }
@@ -46,7 +46,7 @@ func GetSaver(tokenLength int, savePath string) *Saver {
 
 	return &Saver{
 		tokens:      tokens,
-		tokenLength: tokenLength,
+		TokenLength: tokenLength,
 		savePath:    savePath,
 	}
 
@@ -61,7 +61,7 @@ func (s *Saver) Validate(station_id int, token string) (valid bool, newToken str
 
 		valid = true
 
-		b := make([]byte, s.tokenLength)
+		b := make([]byte, s.TokenLength)
 
 		_, err := rand.Read(b)
 
