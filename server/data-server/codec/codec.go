@@ -1,16 +1,25 @@
 package codec
 
 import (
-	"encoding/binary"
-	"fmt"
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
-	"github.com/AmogusAzul/weather-station/server/data-server/safety"
+	"github.com/AmogusAzul/weather-station/server/data-server/dispatcher"
+	safety "github.com/AmogusAzul/weather-station/server/data-server/safety"
 )
+
+const (
+	version         byte = 1
+	maxBufferLength uint = 1024
+
+	stationType byte = 1
+)
+
+var RequestHandlers map[byte]RequestHandler = map[byte]RequestHandler{
+	stationType: StationHandler,
+}
 
 type Decoder struct {
 	WorkerQueue chan net.Conn
@@ -21,11 +30,11 @@ type Decoder struct {
 	saver     *safety.Saver
 }
 
-const (
-	version byte = 1
-)
-
-func GetDecoder(workerPool chan chan net.Conn, dbHandler *dbhandle.DbHandler, saver *safety.Saver) *Decoder {
+func GetDecoder(
+	workerPool chan chan net.Conn,
+	dbHandler *dbhandle.DbHandler,
+	saver *safety.Saver,
+) dispatcher.Worker {
 
 	return &Decoder{
 		WorkerQueue: make(chan net.Conn),
@@ -35,6 +44,9 @@ func GetDecoder(workerPool chan chan net.Conn, dbHandler *dbhandle.DbHandler, sa
 		saver:       saver,
 	}
 
+}
+func (d *Decoder) Kill() {
+	go func() { d.killChan <- true }()
 }
 
 func (d *Decoder) Start(wg *sync.WaitGroup) {
@@ -52,115 +64,63 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 				break
 			}
 
+			// Letting the dispatcher send a new job to
 			d.WorkerPool <- d.WorkerQueue
 
 			select {
 			case conn := <-d.WorkerQueue:
 
-				buffer := make([]byte, 1024)
+				buffer := make([]byte, maxBufferLength)
 
 				n, err := conn.Read(buffer)
 				if err != nil {
 					log.Println("Error reading from connection: ", err)
-					return
+					continue
 				}
 				buffer = buffer[:n]
 
-				stationID, token, moment, randomNum, err := d.decode(buffer)
+				var requestError byte = 0
+				requestVersion, requestType, content := d.decodeRequest(buffer)
+				requestHandler := RequestHandlers[requestType]
 
+				if requestHandler == nil {
+					requestError = typeError
+				}
+				if requestVersion != version {
+					requestError = versionError
+				}
+				if requestError != 0 {
+					ErrorAnswer(conn, requestError)
+					continue
+				}
+
+				err = requestHandler(conn, content, d.saver, d.dbHandler)
 				if err != nil {
-					log.Println("Error decoding buffer: ", err)
-					// Handle the error appropriately, maybe send an error response and return
-					answer(conn, 1, 1, token) // Example response
-					return
+					log.Panicf("error (%s) while processing %v with type %d", err, content, requestType)
 				}
-
-				valid, newToken := d.saver.Validate(stationID, token)
-				if !valid {
-					log.Println("Invalid token for station ID: ", stationID)
-					answer(conn, 1, 2, newToken) // Example response
-					return
-				}
-
-				station, err := d.dbHandler.ReadStation(stationID)
-				if err != nil {
-					log.Println("Error reading station from DB: ", err)
-					answer(conn, 1, 3, newToken) // Example response
-					return
-				}
-
-				measurement, err := d.dbHandler.SendMeasurement(randomNum)
-				if err != nil {
-					log.Println("Error sending measurement to DB: ", err)
-					answer(conn, 1, 4, newToken) // Example response
-					return
-				}
-
-				err = d.dbHandler.SendEntry(measurement, station, moment)
-				if err != nil {
-					log.Println("Error sending entry to DB: ", err)
-					answer(conn, 1, 5, newToken) // Example response
-					return
-				}
-
-				answer(conn, 1, 0, newToken)
-
-				d.dbHandler.SendEntry(measurement, station, moment)
 
 			case killed = <-d.killChan:
 				close(d.WorkerQueue)
 				close(d.killChan)
-
 			}
-
 		}
-
 	}()
-
 }
 
-func (d *Decoder) Kill() {
-	d.killChan <- true
+func (d *Decoder) decodeRequest(buffer []byte) (
+	requestVersion byte,
+	requestType byte,
+	requestContent []byte,
+) {
+	return buffer[0], buffer[1], buffer[2:]
 }
 
-func answer(conn net.Conn, version byte, status byte, token string) {
+func UncompatibleErrorAnswer(conn net.Conn, requestVersion byte, requestError byte) {
 
 	defer conn.Close()
 
-	tokenB := []byte(token)
-	response := append([]byte{version, status}, tokenB...)
-
-	_, err := conn.Write(response)
+	_, err := conn.Write([]byte{requestVersion, requestError})
 	if err != nil {
-		log.Println("Error writing to connection: ", err)
+		log.Println("Error responding to connection: ", err)
 	}
-}
-
-func (d *Decoder) decode(buffer []byte) (
-	stationID int,
-	token string,
-	moment time.Time,
-	randomNum int,
-	err error) {
-
-	if version != buffer[0] {
-		return -1, "", time.Now(), 0, fmt.Errorf("wrong version")
-	}
-
-	stationID = int(buffer[1])<<24 |
-		int(buffer[2])<<16 |
-		int(buffer[3])<<8 |
-		int(buffer[4])
-
-	token = string(buffer[5:11])
-
-	moment = time.Unix(int64(binary.BigEndian.Uint32(buffer[11:15])), 0)
-
-	randomNum = int(buffer[15])<<24 |
-		int(buffer[16])<<16 |
-		int(buffer[17])<<8 |
-		int(buffer[18])
-
-	return
-
 }
