@@ -88,7 +88,7 @@ func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHan
 	bytesUsed += 4
 
 	stationID, err := dbHandler.SendRow(
-		&dbhandle.Station{
+		dbhandle.Station{
 			StationOwner: ownerName,
 			Latitude:     latitude,
 			Longitude:    longitude,
