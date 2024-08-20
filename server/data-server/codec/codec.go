@@ -14,11 +14,13 @@ const (
 	version         byte = 1
 	maxBufferLength uint = 1024
 
-	stationType byte = 1
+	stationType    byte = 1
+	newStationType byte = 2
 )
 
 var RequestHandlers map[byte]RequestHandler = map[byte]RequestHandler{
-	stationType: StationHandler,
+	stationType:    StationHandler,
+	newStationType: NewStationHandler,
 }
 
 type Decoder struct {

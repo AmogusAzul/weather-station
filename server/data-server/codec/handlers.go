@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"math"
 	"net"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 )
 
 const (
-	okValidatedType  byte = 2
 	errorType        byte = 1
 	validationError  byte = 1
 	databaseError    byte = 2
@@ -17,11 +17,20 @@ const (
 	versionError     byte = 4
 	typeError        byte = 5
 	noStationIDError byte = 6
+	formatError      byte = 7
+
+	okValidatedType byte = 2
+	noReturnOk      byte = 1
+	idReturnOk      byte = 2
 )
 
 type RequestHandler func(net.Conn, []byte, *safety.Saver, *dbhandle.DbHandler) error
 
 func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
+
+	if len(content) < 4+saver.TokenLength+4+4 {
+		return ErrorAnswer(conn, formatError)
+	}
 
 	bytesUsed := 0
 	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
@@ -62,12 +71,34 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 		return ErrorValidatedAnswer(conn, databaseError, newToken)
 	}
 
-	return OkValidatedAnswer(conn, newToken)
+	return OkNoReturnValidatedAnswer(conn, newToken)
 
 }
 func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
 
-	return
+	bytesUsed := 0
+	ownerNameLength := content[bytesUsed]
+	bytesUsed += 1
+	ownerName := string(content[bytesUsed : bytesUsed+int(ownerNameLength)])
+	bytesUsed += int(ownerNameLength)
+	latitude := math.Float32frombits(uint32(BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])))
+	bytesUsed += 4
+	longitude := math.Float32frombits(uint32(BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])))
+	bytesUsed += 4
+
+	stationID, err := dbHandler.SendRow(
+		&dbhandle.Station{
+			StationOwner: ownerName,
+			Latitude:     latitude,
+			Longitude:    longitude,
+		},
+	)
+
+	if err != nil {
+		return ErrorAnswer(conn, databaseError)
+	}
+
+	return OkReturnAnswer(conn, idReturnOk, IntToBigEndianInt32Hex(stationID))
 }
 
 func ErrorAnswer(conn net.Conn, specificErrorType byte) (err error) {
@@ -88,7 +119,7 @@ func ErrorValidatedAnswer(conn net.Conn, specificErrorType byte, token string) (
 	return err
 }
 
-func OkValidatedAnswer(conn net.Conn, newToken string) (err error) {
+func OkNoReturnValidatedAnswer(conn net.Conn, newToken string) (err error) {
 
 	defer conn.Close()
 	answer := []byte{version, okValidatedType}
@@ -101,10 +132,45 @@ func OkValidatedAnswer(conn net.Conn, newToken string) (err error) {
 
 }
 
+func OkReturnValidatedAnswer(conn net.Conn, okType byte, returnContent []byte, newToken string) (err error) {
+
+	defer conn.Close()
+	answer := []byte{version, okValidatedType}
+	for i := 0; i < len(newToken); i++ {
+		answer = append(answer, newToken[i])
+	}
+	answer = append(answer, returnContent...)
+	_, err = conn.Write(answer)
+	return
+}
+
+func OkReturnAnswer(conn net.Conn, okType byte, returnContent []byte) (err error) {
+
+	defer conn.Close()
+	answer := []byte{version, okValidatedType}
+	answer = append(answer, returnContent...)
+	_, err = conn.Write(answer)
+	return
+}
+
 func BigEndianInt32HexToInt(content []byte) int {
 
 	return int(content[0])<<24 |
 		int(content[1])<<16 |
 		int(content[2])<<8 |
 		int(content[3])
+}
+
+func IntToBigEndianInt32Hex(num int) []byte {
+	// Convert the int to an int32 (assuming the input will fit in int32)
+	num32 := int32(num)
+
+	// Manually extract each byte using bit manipulation
+	bytes := []byte{
+		byte((num32 >> 24) & 0xFF), // Most significant byte
+		byte((num32 >> 16) & 0xFF),
+		byte((num32 >> 8) & 0xFF),
+		byte(num32 & 0xFF), // Least significant byte
+	}
+	return bytes
 }
