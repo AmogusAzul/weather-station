@@ -1,7 +1,6 @@
 package codec
 
 import (
-	"encoding/binary"
 	"net"
 	"time"
 
@@ -25,7 +24,7 @@ type RequestHandler func(net.Conn, []byte, *safety.Saver, *dbhandle.DbHandler) e
 func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
 
 	bytesUsed := 0
-	stationID := int32HexToInt([4]byte(content[bytesUsed : bytesUsed+4]))
+	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 	bytesUsed += 4
 	token := string(content[bytesUsed : bytesUsed+saver.TokenLength])
 	bytesUsed += saver.TokenLength
@@ -35,9 +34,9 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 	if !valid {
 		return ErrorValidatedAnswer(conn, validationError, newToken)
 	}
-	moment := time.Unix(int64(binary.BigEndian.Uint32(content[bytesUsed:bytesUsed+4])), 0)
+	moment := time.Unix(int64(BigEndianInt32HexToInt(content[bytesUsed:bytesUsed+4])), 0)
 	bytesUsed += 4
-	randomNum := int32HexToInt([4]byte(content[bytesUsed : bytesUsed+4]))
+	randomNum := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 
 	table, err := dbHandler.ReadRowByID(stationID, &dbhandle.Station{})
 	if err != nil {
@@ -65,6 +64,10 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 
 	return OkValidatedAnswer(conn, newToken)
 
+}
+func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
+
+	return
 }
 
 func ErrorAnswer(conn net.Conn, specificErrorType byte) (err error) {
@@ -98,11 +101,10 @@ func OkValidatedAnswer(conn net.Conn, newToken string) (err error) {
 
 }
 
-func int32HexToInt(content [4]byte) int {
+func BigEndianInt32HexToInt(content []byte) int {
 
 	return int(content[0])<<24 |
 		int(content[1])<<16 |
 		int(content[2])<<8 |
 		int(content[3])
-
 }
