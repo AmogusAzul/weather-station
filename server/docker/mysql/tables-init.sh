@@ -19,9 +19,15 @@ CREATE TABLE measurement (
 
 CREATE TABLE entry (
     entry_id INT PRIMARY KEY AUTO_INCREMENT,
+
     station_id INT NOT NULL,
+    latitude DECIMAL(9, 6) NOT NULL CHECK (latitude >= -90 AND latitude <= 90),
+    longitude DECIMAL(10, 6) NOT NULL CHECK (longitude >= -180 AND longitude <= 180),
+
     measurement_id INT NOT NULL,
+
     entry_time DATETIME NOT NULL,
+
     FOREIGN KEY (station_id) REFERENCES station (station_id),
     FOREIGN KEY (measurement_id) REFERENCES measurement (measurement_id)
 );
