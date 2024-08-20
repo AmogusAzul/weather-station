@@ -2,55 +2,58 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
+	"os"
+	"sync"
+	"time"
 
+	"github.com/AmogusAzul/weather-station/server/data-server/codec"
+	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
+	"github.com/AmogusAzul/weather-station/server/data-server/dispatcher"
+	"github.com/AmogusAzul/weather-station/server/data-server/safety"
+	"github.com/AmogusAzul/weather-station/server/data-server/tcp"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
 
-	// Listen on TCP port 8080
-	listener, err := net.Listen("tcp", ":8080")
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	//waiting for db to start
+	time.Sleep(10 * time.Second)
+
+	//db env variables
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+
+	//token dir
+	tokenPath := os.Getenv("TOKEN_PATH")
+
+	//TEMP
+	maxWorkers := 2
+	jobBuffer := 8
+	tokenLength := 6
+
+	jobQueue := make(chan net.Conn, jobBuffer)
+
+	sl := tcp.GetStationLister("8080", jobQueue)
+
+	jobDispatcher := dispatcher.NewJobDispatcher[net.Conn](maxWorkers, codec.GetDecoder, jobQueue)
+
+	dbHandler, err := dbhandle.GetDbHandler(dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	saver := safety.GetSaver(tokenLength, tokenPath)
+
 	if err != nil {
-		log.Fatal("Error starting TCP server: ", err)
-	}
-	defer listener.Close()
-	fmt.Println("Server is listening on port 8080...")
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log.Println("Error accepting connection: ", err)
-			continue
-		}
-		go handleConnection(conn) // Handle each connection concurrently
-	}
-
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	// Buffer to store incoming data
-	buffer := make([]byte, 1024)
-
-	// Read data from the connection
-	n, err := conn.Read(buffer)
-	if err != nil {
-		log.Println("Error reading from connection: ", err)
+		fmt.Println("dbHandler fucked")
 		return
 	}
 
-	// Process the received data
-	receivedData := string(buffer[:n])
-	fmt.Println("Received data: ", receivedData)
+	jobDispatcher.Dispatch(&wg, dbHandler, saver)
+	sl.Listen(&wg)
 
-	// Send a response back to the client
-	response := "Message received: " + receivedData
-	_, err = conn.Write([]byte(response))
-	if err != nil {
-		log.Println("Error writing to connection: ", err)
-		return
-	}
 }
