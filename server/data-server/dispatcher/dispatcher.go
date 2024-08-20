@@ -1,24 +1,29 @@
 package dispatcher
 
-import "sync"
+import (
+	"sync"
 
-type Dispatcher struct {
-	workerPool   chan chan interface{}
-	createWorker func(chan chan interface{}) *Worker
+	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
+	"github.com/AmogusAzul/weather-station/server/data-server/safety"
+)
+
+type JobDispatcher[T any] struct {
+	workerPool   chan chan T
+	createWorker func(chan chan T, *dbhandle.DbHandler, *safety.Saver) Worker
 	maxWorkers   int
-	JobQueue     <-chan interface{}
+	JobQueue     <-chan T
 	killChan     chan bool
 }
 
-func NewDispatcher(
+func NewJobDispatcher[T any](
 	maxWorkers int,
-	createWorker func(chan chan interface{}) *Worker,
-	jobQueue chan interface{},
-) *Dispatcher {
-	return &Dispatcher{
+	createWorker func(chan chan T, *dbhandle.DbHandler, *safety.Saver) Worker,
+	jobQueue chan T,
+) *JobDispatcher[T] {
+	return &JobDispatcher[T]{
 
 		maxWorkers:   maxWorkers,
-		workerPool:   make(chan chan interface{}, maxWorkers),
+		workerPool:   make(chan chan T, maxWorkers),
 		createWorker: createWorker,
 
 		JobQueue: jobQueue,
@@ -27,17 +32,15 @@ func NewDispatcher(
 	}
 }
 
-func (d *Dispatcher) Dispatch(wg *sync.WaitGroup) {
+func (d *JobDispatcher[T]) Dispatch(wg *sync.WaitGroup, dbHandler *dbhandle.DbHandler, saver *safety.Saver) {
 
 	wg.Add(1)
 
-	workers := make([]*Worker, d.maxWorkers)
+	workers := make([]Worker, d.maxWorkers)
 
 	for i := 0; i < d.maxWorkers; i++ {
-
-		workers = append(workers, d.createWorker(d.workerPool))
-		(*workers[i]).Start()
-
+		workers[i] = d.createWorker(d.workerPool, dbHandler, saver)
+		workers[i].Start(wg)
 	}
 
 	go func() {
@@ -63,7 +66,7 @@ func (d *Dispatcher) Dispatch(wg *sync.WaitGroup) {
 
 				close(d.workerPool)
 				for _, worker := range workers {
-					(*worker).Kill()
+					(worker).Kill()
 				}
 			}
 		}
@@ -72,11 +75,11 @@ func (d *Dispatcher) Dispatch(wg *sync.WaitGroup) {
 
 }
 
-func (d *Dispatcher) Kill() {
+func (d *JobDispatcher[T]) Kill() {
 	d.killChan <- true
 }
 
 type Worker interface {
-	Start()
+	Start(*sync.WaitGroup)
 	Kill()
 }
