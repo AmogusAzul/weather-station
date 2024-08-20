@@ -19,9 +19,10 @@ const (
 	noStationIDError byte = 6
 	formatError      byte = 7
 
-	okValidatedType byte = 2
-	noReturnOk      byte = 1
-	idReturnOk      byte = 2
+	okType              byte = 2
+	noReturnOk          byte = 1
+	noReturnValidatedOk byte = 2
+	idReturnOk          byte = 3
 )
 
 type RequestHandler func(net.Conn, []byte, *safety.Saver, *dbhandle.DbHandler) error
@@ -122,7 +123,7 @@ func ErrorValidatedAnswer(conn net.Conn, specificErrorType byte, token string) (
 func OkNoReturnValidatedAnswer(conn net.Conn, newToken string) (err error) {
 
 	defer conn.Close()
-	answer := []byte{version, okValidatedType}
+	answer := []byte{version, okType, noReturnValidatedOk}
 	for i := 0; i < len(newToken); i++ {
 		answer = append(answer, newToken[i])
 	}
@@ -132,10 +133,10 @@ func OkNoReturnValidatedAnswer(conn net.Conn, newToken string) (err error) {
 
 }
 
-func OkReturnValidatedAnswer(conn net.Conn, okType byte, returnContent []byte, newToken string) (err error) {
+func OkReturnValidatedAnswer(conn net.Conn, specificOkType byte, returnContent []byte, newToken string) (err error) {
 
 	defer conn.Close()
-	answer := []byte{version, okValidatedType}
+	answer := []byte{version, okType, specificOkType}
 	for i := 0; i < len(newToken); i++ {
 		answer = append(answer, newToken[i])
 	}
@@ -144,12 +145,21 @@ func OkReturnValidatedAnswer(conn net.Conn, okType byte, returnContent []byte, n
 	return
 }
 
-func OkReturnAnswer(conn net.Conn, okType byte, returnContent []byte) (err error) {
+func OkReturnAnswer(conn net.Conn, specificOkType byte, returnContent []byte) (err error) {
 
 	defer conn.Close()
-	answer := []byte{version, okValidatedType}
+	answer := []byte{version, okType, specificOkType}
 	answer = append(answer, returnContent...)
 	_, err = conn.Write(answer)
+	return
+}
+
+func OkNoReturnAnswer(conn net.Conn) (err error) {
+
+	defer conn.Close()
+
+	_, err = conn.Write([]byte{version})
+
 	return
 }
 
