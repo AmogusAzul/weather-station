@@ -25,6 +25,7 @@ func GetStationLister(port string, jobQueue chan<- net.Conn) *StationListener {
 	return &StationListener{
 		listener: listener,
 		JobQueue: jobQueue,
+		killChan: make(chan bool),
 	}
 }
 
@@ -33,28 +34,35 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	go func() {
+		defer wg.Done() // Ensure the WaitGroup is marked as done when the goroutine exits
 
 		for {
+			select {
+			case <-sl.killChan: // If a shutdown signal is received
+				sl.listener.Close()
+				close(sl.JobQueue) // Close the job queue to signal workers to finish
+				return             // Exit the goroutine
 
-			conn, err := sl.listener.Accept()
-			if err != nil {
-				break
+			default:
+				conn, err := sl.listener.Accept()
+				if err != nil {
+					select {
+					case <-sl.killChan: // Handle the case where Accept fails due to listener closing
+						return
+					default:
+						log.Printf("Error accepting connection: %v", err)
+					}
+					continue
+				}
 
+				select {
+				case sl.JobQueue <- conn: // Send the connection to the job queue
+				case <-sl.killChan: // Handle shutdown while waiting to send to the job queue
+					conn.Close() // Close the connection if we're shutting down
+					return
+				}
 			}
-			sl.JobQueue <- conn
 		}
-	}()
-
-	go func() {
-
-		<-sl.killChan
-		close(sl.killChan)
-
-		sl.listener.Close()
-		close(sl.JobQueue)
-
-		wg.Done()
-
 	}()
 }
 
