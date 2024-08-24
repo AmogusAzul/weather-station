@@ -5,9 +5,8 @@ import (
 	"net"
 	"sync"
 
-	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
 	"github.com/AmogusAzul/weather-station/server/data-server/dispatcher"
-	safety "github.com/AmogusAzul/weather-station/server/data-server/safety"
+	"github.com/AmogusAzul/weather-station/server/data-server/executer"
 )
 
 const (
@@ -16,11 +15,13 @@ const (
 
 	stationType    byte = 1
 	newStationType byte = 2
+	closeType      byte = 3
 )
 
 var RequestHandlers map[byte]RequestHandler = map[byte]RequestHandler{
 	stationType:    StationHandler,
 	newStationType: NewStationHandler,
+	closeType:      CloseHandler,
 }
 
 type Decoder struct {
@@ -28,26 +29,22 @@ type Decoder struct {
 	WorkerPool  chan<- chan net.Conn
 	killChan    chan bool
 
-	dbHandler *dbhandle.DbHandler
-	saver     *safety.Saver
+	Executer *executer.Executer
 }
 
 func GetDecoder(
 	workerPool chan chan net.Conn,
-	dbHandler *dbhandle.DbHandler,
-	saver *safety.Saver,
+	e *executer.Executer,
 ) dispatcher.Worker {
 
 	return &Decoder{
 		WorkerQueue: make(chan net.Conn),
 		WorkerPool:  workerPool,
 		killChan:    make(chan bool),
-		dbHandler:   dbHandler,
-		saver:       saver,
+		Executer:    e,
 	}
-
 }
-func (d *Decoder) Kill() {
+func (d *Decoder) Close() {
 	go func() { d.killChan <- true }()
 }
 
@@ -96,7 +93,7 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 					continue
 				}
 
-				err = requestHandler(conn, content, d.saver, d.dbHandler)
+				err = requestHandler(conn, content, d.Executer)
 				if err != nil {
 					log.Panicf("error (%s) while processing %v with type %d", err, content, requestType)
 				}

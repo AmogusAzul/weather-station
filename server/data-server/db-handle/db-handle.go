@@ -26,8 +26,8 @@ func GetDbHandler(dbUser, dbPassword, dbHost, dbPort, dbName string) (*DbHandler
 		db: db,
 	}, err
 }
-func (dh *DbHandler) Exit() {
-	dh.db.Close()
+func (dh *DbHandler) Close() error {
+	return dh.db.Close()
 }
 
 func (dh *DbHandler) ReadRowByID(id int, object Table) (Table, error) {

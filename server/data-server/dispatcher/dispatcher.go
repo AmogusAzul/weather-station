@@ -3,13 +3,12 @@ package dispatcher
 import (
 	"sync"
 
-	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
-	"github.com/AmogusAzul/weather-station/server/data-server/safety"
+	"github.com/AmogusAzul/weather-station/server/data-server/executer"
 )
 
 type JobDispatcher[T any] struct {
 	workerPool   chan chan T
-	createWorker func(chan chan T, *dbhandle.DbHandler, *safety.Saver) Worker
+	createWorker func(chan chan T, *executer.Executer) Worker
 	maxWorkers   int
 	JobQueue     <-chan T
 	killChan     chan bool
@@ -17,7 +16,7 @@ type JobDispatcher[T any] struct {
 
 func NewJobDispatcher[T any](
 	maxWorkers int,
-	createWorker func(chan chan T, *dbhandle.DbHandler, *safety.Saver) Worker,
+	createWorker func(chan chan T, *executer.Executer) Worker,
 	jobQueue chan T,
 ) *JobDispatcher[T] {
 	return &JobDispatcher[T]{
@@ -32,14 +31,14 @@ func NewJobDispatcher[T any](
 	}
 }
 
-func (d *JobDispatcher[T]) Dispatch(wg *sync.WaitGroup, dbHandler *dbhandle.DbHandler, saver *safety.Saver) {
+func (d *JobDispatcher[T]) Dispatch(wg *sync.WaitGroup, executer *executer.Executer) {
 
 	wg.Add(1)
 
 	workers := make([]Worker, d.maxWorkers)
 
 	for i := 0; i < d.maxWorkers; i++ {
-		workers[i] = d.createWorker(d.workerPool, dbHandler, saver)
+		workers[i] = d.createWorker(d.workerPool, executer)
 		workers[i].Start(wg)
 	}
 
@@ -66,7 +65,7 @@ func (d *JobDispatcher[T]) Dispatch(wg *sync.WaitGroup, dbHandler *dbhandle.DbHa
 
 				close(d.workerPool)
 				for _, worker := range workers {
-					(worker).Kill()
+					worker.Close()
 				}
 			}
 		}
@@ -75,11 +74,12 @@ func (d *JobDispatcher[T]) Dispatch(wg *sync.WaitGroup, dbHandler *dbhandle.DbHa
 
 }
 
-func (d *JobDispatcher[T]) Kill() {
+func (d *JobDispatcher[T]) Close() error {
 	d.killChan <- true
+	return nil
 }
 
 type Worker interface {
 	Start(*sync.WaitGroup)
-	Kill()
+	Close()
 }

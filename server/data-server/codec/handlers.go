@@ -6,7 +6,7 @@ import (
 	"time"
 
 	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
-	"github.com/AmogusAzul/weather-station/server/data-server/safety"
+	"github.com/AmogusAzul/weather-station/server/data-server/executer"
 )
 
 const (
@@ -25,21 +25,21 @@ const (
 	idReturnOk          byte = 3
 )
 
-type RequestHandler func(net.Conn, []byte, *safety.Saver, *dbhandle.DbHandler) error
+type RequestHandler func(net.Conn, []byte, *executer.Executer) error
 
-func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
+func StationHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
 
-	if len(content) < 4+saver.TokenLength+4+4 {
+	if len(content) < 4+e.Saver.TokenLength+4+4 {
 		return ErrorAnswer(conn, formatError)
 	}
 
 	bytesUsed := 0
 	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 	bytesUsed += 4
-	token := string(content[bytesUsed : bytesUsed+saver.TokenLength])
-	bytesUsed += saver.TokenLength
+	token := string(content[bytesUsed : bytesUsed+e.Saver.TokenLength])
+	bytesUsed += e.Saver.TokenLength
 
-	valid, newToken := saver.Validate(stationID, token)
+	valid, newToken := e.Saver.Validate(stationID, token)
 
 	if !valid {
 		return ErrorValidatedAnswer(conn, validationError, newToken)
@@ -48,7 +48,7 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 	bytesUsed += 4
 	randomNum := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 
-	table, err := dbHandler.ReadRowByID(stationID, &dbhandle.Station{})
+	table, err := e.DBHandler.ReadRowByID(stationID, &dbhandle.Station{})
 	if err != nil {
 		return ErrorValidatedAnswer(conn, noStationIDError, newToken)
 	}
@@ -57,11 +57,11 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 		return ErrorValidatedAnswer(conn, serverError, newToken)
 	}
 
-	measurementID, err := dbHandler.SendRow(dbhandle.Measurement{RandomNum: randomNum})
+	measurementID, err := e.DBHandler.SendRow(dbhandle.Measurement{RandomNum: randomNum})
 	if err != nil {
 		return ErrorValidatedAnswer(conn, databaseError, newToken)
 	}
-	_, err = dbHandler.SendRow(dbhandle.Entry{
+	_, err = e.DBHandler.SendRow(dbhandle.Entry{
 		StationID:     stationID,
 		Latitude:      station.Latitude,
 		Longitude:     station.Longitude,
@@ -75,7 +75,7 @@ func StationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandle
 	return OkNoReturnValidatedAnswer(conn, newToken)
 
 }
-func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHandler *dbhandle.DbHandler) (err error) {
+func NewStationHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
 
 	bytesUsed := 0
 	ownerNameLength := content[bytesUsed]
@@ -87,7 +87,7 @@ func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHan
 	longitude := math.Float32frombits(uint32(BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])))
 	bytesUsed += 4
 
-	stationID, err := dbHandler.SendRow(
+	stationID, err := e.DBHandler.SendRow(
 		dbhandle.Station{
 			StationOwner: ownerName,
 			Latitude:     latitude,
@@ -100,6 +100,20 @@ func NewStationHandler(conn net.Conn, content []byte, saver *safety.Saver, dbHan
 	}
 
 	return OkReturnAnswer(conn, idReturnOk, IntToBigEndianInt32Hex(stationID))
+}
+
+func CloseHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
+
+	go func() error {
+		if err := e.CloseAll(); err != nil {
+			return ErrorAnswer(conn, serverError)
+		}
+
+		return OkNoReturnAnswer(conn)
+	}()
+
+	return nil
+
 }
 
 func ErrorAnswer(conn net.Conn, specificErrorType byte) (err error) {

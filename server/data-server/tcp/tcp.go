@@ -66,6 +66,7 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 	}()
 }
 
-func (sl *StationListener) Close() {
+func (sl *StationListener) Close() error {
 	sl.killChan <- true
+	return nil
 }

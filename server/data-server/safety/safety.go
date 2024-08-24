@@ -75,7 +75,7 @@ func (s *Saver) Validate(station_id int, token string) (valid bool, newToken str
 	return
 }
 
-func (s *Saver) Save() {
+func (s *Saver) Close() error {
 
 	jsonTokens := make(map[string]string)
 	for key, value := range s.tokens {
@@ -84,13 +84,15 @@ func (s *Saver) Save() {
 
 	jsonData, err := json.MarshalIndent(jsonTokens, "", "  ")
 	if err != nil {
-		log.Fatalf("Error marshaling map to JSON: %v", err)
+		return fmt.Errorf("error marshaling map to json: %v", err)
 	}
 
 	err = os.WriteFile(s.savePath, jsonData, 0644)
 
 	if err != nil {
-		log.Fatal("wasn't able to save tokens", err)
+		return fmt.Errorf("wasn't able to save tokens %s", err)
 	}
+
+	return nil
 
 }

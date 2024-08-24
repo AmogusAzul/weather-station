@@ -10,6 +10,7 @@ import (
 	"github.com/AmogusAzul/weather-station/server/data-server/codec"
 	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
 	"github.com/AmogusAzul/weather-station/server/data-server/dispatcher"
+	"github.com/AmogusAzul/weather-station/server/data-server/executer"
 	"github.com/AmogusAzul/weather-station/server/data-server/safety"
 	"github.com/AmogusAzul/weather-station/server/data-server/tcp"
 	_ "github.com/go-sql-driver/mysql"
@@ -53,7 +54,9 @@ func main() {
 		return
 	}
 
-	jobDispatcher.Dispatch(&wg, dbHandler, saver)
+	e := executer.GetExecuter(saver, dbHandler)
+	e.AddToClose(sl, jobDispatcher, dbHandler, saver)
+	jobDispatcher.Dispatch(&wg, e)
 	sl.Listen(&wg)
 
 }
