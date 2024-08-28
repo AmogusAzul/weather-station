@@ -2,6 +2,7 @@ package safety
 
 import (
 	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -17,14 +18,12 @@ type Saver struct {
 }
 
 func GetSaver(tokenLength int, savePath string) *Saver {
-
 	jsonData, err := os.ReadFile(savePath)
-
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
 	}
 
-	// Step 2: Unmarshal the JSON data into a map[string]string
+	// Unmarshal the JSON data into a map[string]string
 	jsonMap := make(map[string]string)
 	err = json.Unmarshal(jsonData, &jsonMap)
 	if err != nil {
@@ -34,14 +33,18 @@ func GetSaver(tokenLength int, savePath string) *Saver {
 	tokens := make(map[int]string)
 
 	for key, value := range jsonMap {
-
 		num, err := strconv.Atoi(key)
-
 		if err != nil {
 			log.Fatalf("Index \"%s\" in json isn't parseable", key)
 		}
 
-		tokens[num] = value
+		// Decode the hex string back to the original binary data
+		decodedValue, err := hex.DecodeString(value)
+		if err != nil {
+			log.Fatalf("Failed to decode hex string for key %d: %v", num, err)
+		}
+
+		tokens[num] = string(decodedValue)
 	}
 
 	return &Saver{
@@ -49,25 +52,33 @@ func GetSaver(tokenLength int, savePath string) *Saver {
 		TokenLength: tokenLength,
 		savePath:    savePath,
 	}
+}
+
+func (s *Saver) CreateToken(id int) (err error) {
+
+	newToken, err := s.newToken()
+
+	s.tokens[id] = newToken
+
+	return
 
 }
 
-func (s *Saver) Validate(station_id int, token string) (valid bool, newToken string) {
+func (s *Saver) Validate(id int, token string) (valid bool, newToken string) {
 
 	newToken = token
 
-	// creates a new token
-	if s.tokens[station_id] == token {
+	// creates a new token if valid
+	if s.tokens[id] == token {
 
-		valid = true
-
-		b := make([]byte, s.TokenLength)
-
-		_, err := rand.Read(b)
+		genToken, err := s.newToken()
 
 		if err == nil {
-			newToken = string(b)
-			s.tokens[station_id] = newToken
+
+			newToken = genToken
+			s.tokens[id] = newToken
+			valid = true
+
 		}
 
 	}
@@ -75,11 +86,24 @@ func (s *Saver) Validate(station_id int, token string) (valid bool, newToken str
 	return
 }
 
-func (s *Saver) Close() error {
+func (s *Saver) newToken() (newToken string, err error) {
 
+	b := make([]byte, s.TokenLength)
+
+	_, err = rand.Read(b)
+
+	newToken = string(b)
+
+	return
+
+}
+
+func (s *Saver) Close() error {
 	jsonTokens := make(map[string]string)
 	for key, value := range s.tokens {
-		jsonTokens[fmt.Sprintf("%d", key)] = value
+		// Encode the binary token to a hex string
+		encodedValue := hex.EncodeToString([]byte(value))
+		jsonTokens[fmt.Sprintf("%d", key)] = encodedValue
 	}
 
 	jsonData, err := json.MarshalIndent(jsonTokens, "", "  ")
@@ -88,11 +112,9 @@ func (s *Saver) Close() error {
 	}
 
 	err = os.WriteFile(s.savePath, jsonData, 0644)
-
 	if err != nil {
 		return fmt.Errorf("wasn't able to save tokens %s", err)
 	}
 
 	return nil
-
 }
