@@ -29,35 +29,30 @@ func GetStationLister(port string, jobQueue chan<- net.Conn) *StationListener {
 	}
 }
 
+// Listen starts the listener in a goroutine and waits for incoming connections.
 func (sl *StationListener) Listen(wg *sync.WaitGroup) {
-
 	wg.Add(1)
-
 	go func() {
-		defer wg.Done() // Ensure the WaitGroup is marked as done when the goroutine exits
+		defer wg.Done() // Mark the WaitGroup as done when this goroutine exits
 
 		for {
+			conn, err := sl.listener.Accept()
+
+			// Check if a shutdown signal was received
 			select {
-			case <-sl.killChan: // If a shutdown signal is received
-				sl.listener.Close()
-				close(sl.JobQueue) // Close the job queue to signal workers to finish
-				return             // Exit the goroutine
+			case <-sl.killChan:
+				return
 
 			default:
-				conn, err := sl.listener.Accept()
 				if err != nil {
-					select {
-					case <-sl.killChan: // Handle the case where Accept fails due to listener closing
-						return
-					default:
-						log.Printf("Error accepting connection: %v", err)
-					}
+					log.Printf("Error accepting connection: %v", err)
 					continue
 				}
 
 				select {
-				case sl.JobQueue <- conn: // Send the connection to the job queue
-				case <-sl.killChan: // Handle shutdown while waiting to send to the job queue
+				case sl.JobQueue <- conn:
+					// Connection successfully sent to JobQueue
+				case <-sl.killChan:
 					conn.Close() // Close the connection if we're shutting down
 					return
 				}
@@ -66,7 +61,8 @@ func (sl *StationListener) Listen(wg *sync.WaitGroup) {
 	}()
 }
 
+// Close sends a shutdown signal to the listener.
 func (sl *StationListener) Close() error {
-	sl.killChan <- true
-	return nil
+	close(sl.killChan)
+	return sl.listener.Close() // Ensure the listener is closed when shutting down
 }
