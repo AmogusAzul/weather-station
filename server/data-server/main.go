@@ -54,7 +54,7 @@ func main() {
 		return
 	}
 
-	e := executer.GetExecuter(saver, dbHandler)
+	e := executer.GetExecuter(saver, dbHandler, &wg)
 	e.AddToClose(sl, jobDispatcher, dbHandler, saver)
 	jobDispatcher.Dispatch(&wg, e)
 	sl.Listen(&wg)
