@@ -1,16 +1,19 @@
 package codec
 
 import (
+	"fmt"
 	"math"
 	"net"
 	"time"
 
 	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
 	"github.com/AmogusAzul/weather-station/server/data-server/executer"
+	"github.com/AmogusAzul/weather-station/server/data-server/safety"
 )
 
 const (
-	errorType        byte = 1
+	errorType byte = 1
+
 	validationError  byte = 1
 	databaseError    byte = 2
 	serverError      byte = 3
@@ -19,7 +22,8 @@ const (
 	noStationIDError byte = 6
 	formatError      byte = 7
 
-	okType              byte = 2
+	okType byte = 2
+
 	noReturnOk          byte = 1
 	noReturnValidatedOk byte = 2
 	idReturnOk          byte = 3
@@ -29,15 +33,15 @@ type RequestHandler func(net.Conn, []byte, *executer.Executer) error
 
 func StationHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
 
-	if len(content) < 4+e.Saver.TokenLength+4+4 {
+	if len(content) < 4+safety.TOKEN_LENGTH+4+4 {
 		return ErrorAnswer(conn, formatError)
 	}
 
 	bytesUsed := 0
 	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 	bytesUsed += 4
-	token := string(content[bytesUsed : bytesUsed+e.Saver.TokenLength])
-	bytesUsed += e.Saver.TokenLength
+	token := string(content[bytesUsed : bytesUsed+safety.TOKEN_LENGTH])
+	bytesUsed += safety.TOKEN_LENGTH
 
 	valid, newToken := e.Saver.Validate(stationID, token)
 

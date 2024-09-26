@@ -10,14 +10,18 @@ import (
 	"strconv"
 )
 
+// #include "../../../common/safety/safety.h"
+import "C"
+
+var TOKEN_LENGTH = int(C.TOKEN_LENGTH)
+
 type Saver struct {
-	tokens      map[int]string
-	TokenLength int
+	tokens map[int]string
 
 	savePath string
 }
 
-func GetSaver(tokenLength int, savePath string) *Saver {
+func GetSaver(savePath string) *Saver {
 	jsonData, err := os.ReadFile(savePath)
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
@@ -48,9 +52,8 @@ func GetSaver(tokenLength int, savePath string) *Saver {
 	}
 
 	return &Saver{
-		tokens:      tokens,
-		TokenLength: tokenLength,
-		savePath:    savePath,
+		tokens:   tokens,
+		savePath: savePath,
 	}
 }
 
@@ -88,7 +91,7 @@ func (s *Saver) Validate(id int, token string) (valid bool, newToken string) {
 
 func (s *Saver) newToken() (newToken string, err error) {
 
-	b := make([]byte, s.TokenLength)
+	b := make([]byte, TOKEN_LENGTH)
 
 	_, err = rand.Read(b)
 

@@ -37,7 +37,6 @@ func main() {
 	//TEMP
 	maxWorkers := 2
 	jobBuffer := 8
-	tokenLength := 6
 
 	jobQueue := make(chan net.Conn, jobBuffer)
 
@@ -47,7 +46,7 @@ func main() {
 
 	dbHandler, err := dbhandle.GetDbHandler(dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	saver := safety.GetSaver(tokenLength, tokenPath)
+	saver := safety.GetSaver(tokenPath)
 
 	if err != nil {
 		fmt.Println("dbHandler fucked")

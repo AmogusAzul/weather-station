@@ -41,8 +41,8 @@ services:
 
   data-server:
     build:
-      context: ../
-      dockerfile: ./docker/data-server/Dockerfile
+      context: ../../
+      dockerfile: ./server/docker/data-server/Dockerfile
     container_name: data-server
 
     volumes:

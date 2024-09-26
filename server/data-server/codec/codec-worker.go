@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -77,6 +78,8 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 					continue
 				}
 				buffer = buffer[:n]
+
+				fmt.Println(buffer)
 
 				var requestError byte = 0
 				requestVersion, requestType, content := d.decodeRequest(buffer)
