@@ -103,6 +103,8 @@ func NewStationHandler(conn net.Conn, content []byte, e *executer.Executer) (err
 		return ErrorAnswer(conn, databaseError)
 	}
 
+	e.Saver.CreateToken(stationID)
+
 	return OkReturnAnswer(conn, idReturnOk, IntToBigEndianInt32Hex(stationID))
 }
 
