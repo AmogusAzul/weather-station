@@ -14,4 +14,45 @@ public:
 
 };
 
+class Int32Bytes : public Base32Bytes {
+
+    // Constructors for getting data from a number or an array
+    Int32Bytes(const int32_t number);
+    Int32Bytes(const uint8_t* data);
+
+    
+
+    // I/O functions for numbers
+    void setNumber(const int32_t number);
+    int32_t getNumber() const;
+
+};
+
+class UInt32Bytes : public Base32Bytes {
+
+    // Constructors for getting data from a number or an array
+    UInt32Bytes(const uint32_t number);
+    UInt32Bytes(const uint8_t* data);
+
+    
+
+    // I/O functions for numbers
+    void setNumber(const uint32_t number);
+    uint32_t getNumber() const;
+
+};
+
+class Float32Bytes : public Base32Bytes {
+
+    // Constructors for getting data from a number or an array
+    Float32Bytes(const float number);
+    Float32Bytes(const uint8_t* data);
+    
+
+    // I/O functions for numbers
+    void setNumber(const float number);
+    float getNumber() const;
+
+};
+
 #endif // BASE32BYTES_TYPES_H
