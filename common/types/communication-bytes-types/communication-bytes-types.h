@@ -11,4 +11,29 @@ class TokenBytes : public Bytes {
 
 };
 
+enum class HeaderField : size_t {
+    VERSION = 0,
+    TYPE = 1,
+    DIRECTION = 2,
+
+    COUNT
+};
+
+class HeaderBytes : public Bytes {
+
+    HeaderBytes(uint8_t* data);
+    HeaderBytes(std::string str);
+    HeaderBytes(std::initializer_list<uint8_t> fields);
+
+    // Unified getter and setter
+    void setField(HeaderField field, uint8_t value);
+    uint8_t getField(HeaderField field) const;
+
+    // Get the count of enum values
+    static constexpr size_t getFieldEnum(HeaderField field) {
+        return static_cast<size_t>(field);
+    }
+
+};
+
 #endif // COMMUNICATION_BYTES_TYPES
