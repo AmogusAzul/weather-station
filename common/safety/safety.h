@@ -1,7 +1,7 @@
 #ifndef SAFETY_H
 #define SAFETY_H
 
-#include <cstddef>
+#include <cstring>
 
 const size_t TOKEN_LENGTH = 6;
 
