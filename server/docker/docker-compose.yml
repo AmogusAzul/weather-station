@@ -45,7 +45,6 @@ services:
     container_name: data-server
 
     volumes:
-      - ../data-server${TOKEN_PATH}:${TOKEN_PATH}
 
     logging:
       driver: "json-file"
