@@ -1,4 +1,4 @@
-#include "base32-bytes-types.h"
+#include "headers/types/base32-bytes-types/base32-bytes-types.h"
 
 Int32Bytes::Int32Bytes(int32_t number) : 
 Base32Bytes::Base32Bytes()

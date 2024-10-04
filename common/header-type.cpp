@@ -1,4 +1,4 @@
-#include "communication-bytes-types.h"
+#include "headers/types/communication-bytes-types/communication-bytes-types.h"
 
 HeaderBytes::HeaderBytes(uint8_t* data) :
 Bytes::Bytes(getFieldEnum(HeaderField::COUNT), data)

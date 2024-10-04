@@ -1,4 +1,4 @@
-#include "string-bytes-types.h"
+#include "headers/types/string-bytes-types/string-bytes-types.h"
 
 #include <algorithm> // For std::copy, std::min, std::max
 

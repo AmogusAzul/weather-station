@@ -1,4 +1,4 @@
-#include "base32-bytes-types.h"
+#include "headers/types/base32-bytes-types/base32-bytes-types.h"
 
 Base32Bytes::Base32Bytes() :
 Bytes::Bytes(BASE32_BYTES_LENGTH)

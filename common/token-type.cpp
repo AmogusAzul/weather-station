@@ -1,5 +1,5 @@
-#include "communication-bytes-types.h"
-#include "../../safety/safety.h"
+#include "headers/types/communication-bytes-types/communication-bytes-types.h"
+#include "headers/safety/safety.h"
 
 
 

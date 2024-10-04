@@ -1,4 +1,4 @@
-#include "bytes-types.h"
+#include "headers/types/bytes-types.h"
 
 // Constructor method (that takes a byte array)
 Bytes::Bytes(const size_t length, const uint8_t* data)
