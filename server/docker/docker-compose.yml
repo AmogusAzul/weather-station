@@ -2,13 +2,13 @@ services:
 
   db:
     image: mysql:9.0
+    build:
+      context: ./mysql/
+      dockerfile: /Dockerfile
     container_name: mysql-database
 
     volumes:
       - data:/var/lib/mysql
-      - ./mysql/tables-init.sh:/docker-entrypoint-initdb.d/tables-init.sh
-      - ./mysql/user-init.sh:/docker-entrypoint-initdb.d/user-init.sh
-      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
 
     logging:
       driver: "json-file"
