@@ -1,7 +1,6 @@
 package codec
 
 import (
-	"fmt"
 	"math"
 	"net"
 	"time"
