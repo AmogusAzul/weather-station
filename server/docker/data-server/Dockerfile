@@ -3,8 +3,6 @@ FROM golang:alpine3.20 AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-
-
 # Copy the all the files for data-server
 COPY ./server/data-server ./server/data-server
 COPY ./common ./common
@@ -30,8 +28,6 @@ RUN go build -o /app/data-server
 
 # Final stage to create a lightweight container
 FROM alpine:3.20
-
-
 
 # Set the working directory inside the container
 WORKDIR /app
