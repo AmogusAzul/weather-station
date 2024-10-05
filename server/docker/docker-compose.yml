@@ -42,9 +42,11 @@ services:
     build:
       context: ../../
       dockerfile: ./server/docker/data-server/Dockerfile
-    container_name: data-server
 
-    volumes:
+      args:
+        TOKEN_PATH: /tokens.json
+
+    container_name: data-server
 
     logging:
       driver: "json-file"
@@ -59,8 +61,6 @@ services:
       - DB_USER=${DB_DATA_SERVER_USER}  # Change this to the appropriate user as needed
       - DB_PASSWORD=${DB_DATA_SERVER_PASSWORD}  # Change this to the appropriate password as needed
       - DB_NAME=${MYSQL_DATABASE}
-
-      - TOKEN_PATH=${TOKEN_PATH}
 
     depends_on:
       - db
