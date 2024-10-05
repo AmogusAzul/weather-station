@@ -10,10 +10,7 @@ import (
 	"strconv"
 )
 
-// #include "../../../common/safety/safety.h"
-import "C"
-
-var TOKEN_LENGTH = int(C.TOKEN_LENGTH)
+var TOKEN_LENGTH = int(6)
 
 type Saver struct {
 	tokens map[int]string
