@@ -4,27 +4,13 @@ FROM golang:alpine3.20 AS builder
 WORKDIR /app
 
 # Copy the all the files for data-server
-COPY ./server/data-server ./server/data-server
-COPY ./common ./common
-
-
-
-# Install required packages for Cgo
-RUN apk add --no-cache gcc musl-dev
-
-# Enable CGO explicitly
-ENV CGO_ENABLED=1
-
-
+COPY ./server/data-server/ /app/
 
 # Download Go module dependencies
-RUN cd ./server/data-server && go mod download
+RUN go mod download
 
-# Build the Go application
-WORKDIR /app/server/data-server
-RUN go build -o /app/data-server
-
-
+# Run the Go build for the binary
+RUN go build -o /app/data-server /app/code/
 
 # Final stage to create a lightweight container
 FROM alpine:3.20
