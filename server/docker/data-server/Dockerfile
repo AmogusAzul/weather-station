@@ -10,7 +10,7 @@ COPY ./server/data-server/ /app/
 RUN go mod download
 
 # Run the Go build for the binary
-RUN go build -o /app/data-server /app/code/
+RUN go build -o /app/data-server /app/
 
 # Final stage to create a lightweight container
 FROM alpine:3.20
