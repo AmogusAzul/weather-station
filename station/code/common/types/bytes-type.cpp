@@ -1,4 +1,4 @@
-#include "headers/types/bytes-types.h"
+#include "bytes-types.h"
 
 // Constructor method (that takes a byte array)
 Bytes::Bytes(const size_t length, const uint8_t* data)
@@ -7,6 +7,20 @@ Bytes::Bytes(const size_t length, const uint8_t* data)
     if (data != nullptr) {
         setBytes(length, data);
     }
+}
+
+Bytes::Bytes(const std::initializer_list<Bytes> byteList)
+{
+        size_t length = 0;
+
+        for (const auto& byteArray : byteList) {
+            length += byteArray.getLength();
+        }
+        
+        bytes.resize(size);
+        for (const auto& byteArray : byteList) {
+            bytes.insert(bytes.end(), byteArray.getBytes(), byteArray.getBytes() + byteArray.getLength());
+        }
 }
 
 size_t Bytes::getLength() const
@@ -64,4 +78,16 @@ Bytes::bigEndianBitShifts() const
         pairs.emplace_back(i, 8 * (getLength() - i - 1));
     }
     return pairs;
+}
+
+// Append a single byte to the bytes vector
+void Bytes::append(const uint8_t byte) {
+    bytes.push_back(byte);
+    size = bytes.size();  // Update size after appending
+}
+
+// Append an array of bytes to the bytes vector
+void Bytes::append(const uint8_t* data, const size_t length) {
+    bytes.insert(bytes.end(), data, data + length);  // Insert multiple bytes
+    size = bytes.size();  // Update size after appending
 }

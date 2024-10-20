@@ -1,4 +1,4 @@
-#include "headers/types/base32-bytes-types/base32-bytes-types.h"
+#include "base32-bytes-types.h"
 #include <cstring>
 
 Float32Bytes::Float32Bytes(const float number) :

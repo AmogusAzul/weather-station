@@ -19,7 +19,10 @@ protected:
 
 public:
     // Constructor (just a declaration here)
-    Bytes(const size_t length, const uint8_t* data = nullptr);
+    Bytes(const size_t length, const uint8_t* data = nullptr); 
+
+    // Constructor that merges multiple Bytes objects using initializer list
+    Bytes(const std::initializer_list<Bytes> byteList);
 
     // Get the length of the byte array
     size_t getLength() const;
@@ -39,6 +42,10 @@ public:
 
     // Function for getting corresponding bitshifts to bytes' indexes
     std::vector<std::pair<int, int>>bigEndianBitShifts() const;
+
+    void append(const uint8_t byte);
+    void append(const uint8_t* data, const size_t length);
+    
 };
 
 #endif // BYTES_TYPES_H

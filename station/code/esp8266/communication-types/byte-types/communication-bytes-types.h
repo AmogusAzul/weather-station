@@ -1,13 +1,13 @@
 #ifndef COMMUNICATION_BYTES_TYPES
 #define COMMUNICATION_BYTES_TYPES
 
-#include "../bytes-types.h"
+#include "../../common/types/bytes-types.h"
 #include <string>
 
 class TokenBytes : public Bytes {
 
-    TokenBytes(uint8_t* data = nullptr);
-    TokenBytes(std::string str);
+    TokenBytes(const uint8_t* data = (const uint8_t*)nullptr);
+    TokenBytes(const std::string str);
 
 };
 
@@ -21,9 +21,9 @@ enum class HeaderField : size_t {
 
 class HeaderBytes : public Bytes {
 
-    HeaderBytes(uint8_t* data);
-    HeaderBytes(std::string str);
-    HeaderBytes(std::initializer_list<uint8_t> fields);
+    HeaderBytes(const uint8_t* data);
+    HeaderBytes(const std::string str);
+    HeaderBytes(const std::initializer_list<uint8_t> fields);
 
     // Unified getter and setter
     void setField(HeaderField field, uint8_t value);

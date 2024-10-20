@@ -1,4 +1,4 @@
-#include "headers/types/base32-bytes-types/base32-bytes-types.h"
+#include "base32-bytes-types.h"
 
 UInt32Bytes::UInt32Bytes(uint32_t number) : 
 Base32Bytes::Base32Bytes()

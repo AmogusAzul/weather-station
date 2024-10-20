@@ -1,17 +1,17 @@
-#include "headers/types/communication-bytes-types/communication-bytes-types.h"
+#include "communication-bytes-types.h"
 
-HeaderBytes::HeaderBytes(uint8_t* data) :
+HeaderBytes::HeaderBytes(const uint8_t* data) :
 Bytes::Bytes(getFieldEnum(HeaderField::COUNT), data)
 {
 }
 
-HeaderBytes::HeaderBytes(std::string str) :
+HeaderBytes::HeaderBytes(const std::string str) :
 Bytes::Bytes(getFieldEnum(HeaderField::COUNT))
 {
     setByteString(str);
 }
 
-HeaderBytes::HeaderBytes(std::initializer_list<uint8_t> fields) :
+HeaderBytes::HeaderBytes(const std::initializer_list<uint8_t> fields) :
 Bytes::Bytes(getFieldEnum(HeaderField::COUNT))
 {
     // Fill the fields with provided values and default to 0 for missing fields
