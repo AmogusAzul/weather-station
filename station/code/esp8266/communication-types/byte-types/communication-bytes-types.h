@@ -36,4 +36,21 @@ class HeaderBytes : public Bytes {
 
 };
 
+class Packet : public Bytes {
+private:
+    HeaderBytes header;  // All packets start with a HeaderBytes object
+
+public:
+    // Constructor using initializer list that includes both the HeaderBytes and other data
+    Packet(const HeaderBytes& headerData, const std::initializer_list<Bytes> byteList);
+
+    // Get a reference to the HeaderBytes
+    const HeaderBytes& getHeader() const {
+        return header;
+    }
+
+    void Packet::setHeader(const HeaderBytes& newHeader);
+
+};
+
 #endif // COMMUNICATION_BYTES_TYPES
