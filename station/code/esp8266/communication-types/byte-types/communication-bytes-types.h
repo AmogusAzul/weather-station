@@ -1,7 +1,7 @@
 #ifndef COMMUNICATION_BYTES_TYPES
 #define COMMUNICATION_BYTES_TYPES
 
-#include "../../common/types/bytes-types.h"
+#include "../../../common/types/bytes-types.h"
 #include <string>
 
 class TokenBytes : public Bytes {
