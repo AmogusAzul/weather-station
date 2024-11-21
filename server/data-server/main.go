@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -34,9 +35,14 @@ func main() {
 	//token dir
 	tokenPath := os.Getenv("TOKEN_PATH")
 
-	//TEMP
-	maxWorkers := 2
-	jobBuffer := 8
+	// Concurrency parameters
+	maxWorkers, err := strconv.Atoi(os.Getenv("MAX_WORKERS"))
+	jobBuffer, err0 := strconv.Atoi(os.Getenv("JOB_BUFFER"))
+
+	if err != nil || err0 != nil {
+		fmt.Println("MAX_WORKERS or JOB_BUFFER isn't defined correctly in .env, they both have to be numbers")
+		return
+	}
 
 	jobQueue := make(chan net.Conn, jobBuffer)
 
