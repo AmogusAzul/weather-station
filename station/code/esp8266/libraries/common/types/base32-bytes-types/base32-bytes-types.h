@@ -34,7 +34,7 @@ public:
 class UInt32Bytes : public Base32Bytes {
 public:
     // Constructors for getting data from a number or an array
-    UInt32Bytes(const uint32_t number);
+    UInt32Bytes(const uint32_t number=0);
     UInt32Bytes(const uint8_t* data);
 
     

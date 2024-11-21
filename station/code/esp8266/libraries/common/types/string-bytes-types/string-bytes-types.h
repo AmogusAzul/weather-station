@@ -14,7 +14,7 @@ class StringBytes : public Bytes {
 public:
 
     StringBytes(std::string str="");
-    StringBytes(size_t length = 0, uint8_t* data = nullptr);
+    StringBytes(size_t length, uint8_t* data = nullptr);
 
     void setBytes(size_t length, uint8_t* data);
 
