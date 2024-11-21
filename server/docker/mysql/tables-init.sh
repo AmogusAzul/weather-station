@@ -9,7 +9,8 @@ CREATE TABLE station (
     station_id INT PRIMARY KEY AUTO_INCREMENT,
     station_owner VARCHAR(255) NOT NULL,
     latitude DECIMAL(9, 6) NOT NULL CHECK (latitude >= -90 AND latitude <= 90),
-    longitude DECIMAL(10, 6) NOT NULL CHECK (longitude >= -180 AND longitude <= 180)
+    longitude DECIMAL(10, 6) NOT NULL CHECK (longitude >= -180 AND longitude <= 180),
+    password_hash VARCHAR(64) NOT NULL
 );
 
 CREATE TABLE measurement (

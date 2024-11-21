@@ -23,15 +23,21 @@ type Station struct {
 
 	Latitude  float32
 	Longitude float32
+
+	PasswordHash string
 }
 
+// Get DB name of the station table
 func (s Station) GetTableName() string { return StationTableName }
+
+// Get all the fields' names (have to be manually updated)
 func (s Station) GetFieldsNames() []string {
 	return []string{
 		"station_id",
 		"station_owner",
 		"latitude",
 		"longitude",
+		"password_hash",
 	}
 }
 
@@ -41,7 +47,10 @@ type Measurement struct {
 	RandomNum int
 }
 
+// Get DB name of the measurement table
 func (m Measurement) GetTableName() string { return MeasurementTableName }
+
+// Get all the fields' names (have to be manually updated)
 func (m Measurement) GetFieldsNames() []string {
 	return []string{
 		"measurement_id",
@@ -60,7 +69,10 @@ type Entry struct {
 	EntryTime time.Time
 }
 
+// Get DB name of the entry table
 func (e Entry) GetTableName() string { return EntryTableName }
+
+// Get all the fields' names (have to be manually updated)
 func (e Entry) GetFieldsNames() []string {
 	return []string{
 		"entry_id",
@@ -72,10 +84,13 @@ func (e Entry) GetFieldsNames() []string {
 	}
 }
 
+// Get ID of a table object
 func GetID(object Table) int {
 	val := reflect.ValueOf(object).FieldByName("ID")
 	return int(val.Int())
 }
+
+// Get all the values (in order) of the table object
 func GetValues(object Table) []interface{} {
 	val := reflect.ValueOf(object)
 	values := []interface{}{}
@@ -85,6 +100,8 @@ func GetValues(object Table) []interface{} {
 	}
 	return values
 }
+
+// Get pointers to all of Table's instance's fields
 func GetPointers(object Table) (pointers []interface{}, err error) {
 	val := reflect.ValueOf(object)
 
