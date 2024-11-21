@@ -82,7 +82,7 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 				fmt.Println(buffer)
 
 				var requestError byte = 0
-				requestVersion, requestType, content := d.decodeRequest(buffer)
+				requestVersion, requestType, specificRequestType, content := d.decodeRequest(buffer)
 				requestHandler := RequestHandlers[requestType]
 
 				if requestHandler == nil {
@@ -96,7 +96,7 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 					continue
 				}
 
-				err = requestHandler(conn, content, d.Executer)
+				err = requestHandler(conn, specificRequestType, content, d.Executer)
 				if err != nil {
 					log.Panicf("error (%s) while processing %v with type %d", err, content, requestType)
 				}
@@ -112,9 +112,10 @@ func (d *Decoder) Start(wg *sync.WaitGroup) {
 func (d *Decoder) decodeRequest(buffer []byte) (
 	requestVersion byte,
 	requestType byte,
+	specificRequestType byte,
 	requestContent []byte,
 ) {
-	return buffer[0], buffer[1], buffer[2:]
+	return buffer[0], buffer[1], buffer[2], buffer[3:]
 }
 
 func UncompatibleErrorAnswer(conn net.Conn, requestVersion byte, requestError byte) {

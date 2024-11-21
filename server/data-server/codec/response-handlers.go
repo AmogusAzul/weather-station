@@ -28,15 +28,16 @@ const (
 	idReturnOk          byte = 3
 )
 
-type RequestHandler func(net.Conn, []byte, *executer.Executer) error
+type RequestHandler func(net.Conn, byte, []byte, *executer.Executer) error
 
-func StationHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
+func StationHandler(conn net.Conn, specificRequestType byte, content []byte, e *executer.Executer) (err error) {
 
 	if len(content) < 4+safety.TOKEN_LENGTH+4+4 {
 		return ErrorAnswer(conn, formatError)
 	}
 
 	bytesUsed := 0
+
 	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
 	bytesUsed += 4
 	token := string(content[bytesUsed : bytesUsed+safety.TOKEN_LENGTH])
@@ -78,7 +79,7 @@ func StationHandler(conn net.Conn, content []byte, e *executer.Executer) (err er
 	return OkNoReturnValidatedAnswer(conn, newToken)
 
 }
-func NewStationHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
+func NewStationHandler(conn net.Conn, specificRequestType byte, content []byte, e *executer.Executer) (err error) {
 
 	bytesUsed := 0
 	ownerNameLength := content[bytesUsed]
@@ -107,7 +108,7 @@ func NewStationHandler(conn net.Conn, content []byte, e *executer.Executer) (err
 	return OkReturnAnswer(conn, idReturnOk, IntToBigEndianInt32Hex(stationID))
 }
 
-func CloseHandler(conn net.Conn, content []byte, e *executer.Executer) (err error) {
+func CloseHandler(conn net.Conn, specificRequestType byte, content []byte, e *executer.Executer) (err error) {
 
 	go func() error {
 		if err := e.CloseAll(); err != nil {
