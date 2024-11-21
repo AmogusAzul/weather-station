@@ -8,6 +8,9 @@ import (
 	"log"
 	"os"
 	"strconv"
+
+	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
+	password "github.com/AmogusAzul/weather-station/server/data-server/password"
 )
 
 var TOKEN_LENGTH = int(6)
@@ -96,6 +99,20 @@ func (s *Saver) newToken() (newToken string, err error) {
 
 	return
 
+}
+
+func (s *Saver) GetTokenByID(stationID int, rawPassword string, dh *dbhandle.DbHandler) string {
+	if password.ValidateStation(dh, stationID, rawPassword) {
+		return s.tokens[stationID]
+	}
+
+	result := ""
+	for i := 0; i < TOKEN_LENGTH/2; i++ {
+
+		result += "69"
+
+	}
+	return result
 }
 
 func (s *Saver) Close() error {

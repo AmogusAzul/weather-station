@@ -7,6 +7,7 @@ import (
 
 	dbhandle "github.com/AmogusAzul/weather-station/server/data-server/db-handle"
 	"github.com/AmogusAzul/weather-station/server/data-server/executer"
+	"github.com/AmogusAzul/weather-station/server/data-server/password"
 	"github.com/AmogusAzul/weather-station/server/data-server/safety"
 )
 
@@ -90,12 +91,21 @@ func NewStationHandler(conn net.Conn, specificRequestType byte, content []byte, 
 	bytesUsed += 4
 	longitude := math.Float32frombits(uint32(BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])))
 	bytesUsed += 4
+	stationPasswordLength := content[bytesUsed]
+	bytesUsed += 1
+	stationPassword := string(content[bytesUsed : bytesUsed+int(stationPasswordLength)])
+	bytesUsed += int(stationPasswordLength)
+
+	if !password.ValidateAdmin(string(content[bytesUsed+1:])) {
+		return ErrorAnswer(conn, validationError)
+	}
 
 	stationID, err := e.DBHandler.SendRow(
 		dbhandle.Station{
 			StationOwner: ownerName,
 			Latitude:     latitude,
 			Longitude:    longitude,
+			PasswordHash: password.HashPassword(stationPassword),
 		},
 	)
 
@@ -110,6 +120,9 @@ func NewStationHandler(conn net.Conn, specificRequestType byte, content []byte, 
 
 func CloseHandler(conn net.Conn, specificRequestType byte, content []byte, e *executer.Executer) (err error) {
 
+	if !password.ValidateAdmin(string(content[1:])) {
+		return ErrorAnswer(conn, validationError)
+	}
 	go func() error {
 		if err := e.CloseAll(); err != nil {
 			return ErrorAnswer(conn, serverError)
@@ -117,9 +130,23 @@ func CloseHandler(conn net.Conn, specificRequestType byte, content []byte, e *ex
 
 		return OkNoReturnAnswer(conn)
 	}()
-
 	return nil
+}
 
+func GetTokenHandler(conn net.Conn, specificRequestType byte, content []byte, e *executer.Executer) (err error) {
+
+	bytesUsed := 0
+
+	stationID := BigEndianInt32HexToInt(content[bytesUsed : bytesUsed+4])
+	bytesUsed += 4
+	providedPasswordLength := content[bytesUsed]
+	bytesUsed += 1
+	providedPassword := string(content[bytesUsed : bytesUsed+int(providedPasswordLength)])
+	bytesUsed += int(providedPasswordLength)
+
+	token := e.Saver.GetTokenByID(stationID, providedPassword, e.DBHandler)
+
+	return OkNoReturnValidatedAnswer(conn, token)
 }
 
 func ErrorAnswer(conn net.Conn, specificErrorType byte) (err error) {

@@ -17,12 +17,14 @@ const (
 	stationType    byte = 1
 	newStationType byte = 2
 	closeType      byte = 3
+	getToken       byte = 4
 )
 
 var RequestHandlers map[byte]RequestHandler = map[byte]RequestHandler{
 	stationType:    StationHandler,
 	newStationType: NewStationHandler,
 	closeType:      CloseHandler,
+	getToken:       GetTokenHandler,
 }
 
 type Decoder struct {
