@@ -52,7 +52,7 @@ func main() {
 
 	dbHandler, err := dbhandle.GetDbHandler(dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	saver := safety.GetSaver(tokenPath)
+	saver := safety.GetSaver(tokenPath, dbHandler)
 
 	if err != nil {
 		fmt.Println("dbHandler fucked")

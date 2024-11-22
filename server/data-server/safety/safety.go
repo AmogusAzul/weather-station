@@ -21,7 +21,7 @@ type Saver struct {
 	savePath string
 }
 
-func GetSaver(savePath string) *Saver {
+func GetSaver(savePath string, dh *dbhandle.DbHandler) *Saver {
 	jsonData, err := os.ReadFile(savePath)
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
@@ -51,10 +51,20 @@ func GetSaver(savePath string) *Saver {
 		tokens[num] = string(decodedValue)
 	}
 
-	return &Saver{
+	s := &Saver{
 		tokens:   tokens,
 		savePath: savePath,
 	}
+
+	stationCount, _ := dh.GetRowCountOf(dbhandle.Station{})
+
+	for id := 0; id < stationCount; id++ {
+		if tokens[id] != "" {
+			s.CreateToken(id)
+		}
+	}
+
+	return s
 }
 
 func (s *Saver) CreateToken(id int) (err error) {
