@@ -107,9 +107,9 @@ func (s *Saver) GetTokenByID(stationID int, rawPassword string, dh *dbhandle.DbH
 	}
 
 	result := ""
-	for i := 0; i < TOKEN_LENGTH/2; i++ {
+	for i := 0; i < TOKEN_LENGTH; i++ {
 
-		result += "69"
+		result += "i"
 
 	}
 	return result
