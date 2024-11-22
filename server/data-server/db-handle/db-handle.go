@@ -74,3 +74,11 @@ func (dh *DbHandler) SendRow(object Table) (id int, err error) {
 
 	return
 }
+
+func (dh *DbHandler) GetRowCountOf(table Table) (count int, err error) {
+
+	query := fmt.Sprintf("SELECT COUNT(*) AS count FROM %s", table.GetTableName())
+
+	err = dh.db.QueryRow(query).Scan(&count)
+	return
+}
