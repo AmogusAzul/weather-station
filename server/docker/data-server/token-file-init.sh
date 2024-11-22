@@ -17,7 +17,7 @@ mkdir -p "$(dirname "$TOKEN_PATH")"
 # Attempt to create the file
 if touch "$TOKEN_PATH"; then
   # Filling TOKEN_PATH with an empty valid json
-  echo "{\"1\": \"363936393639\"}" >> $TOKEN_PATH
+  echo "{}" >> $TOKEN_PATH
 
   echo "File created successfully at $TOKEN_PATH"
 
