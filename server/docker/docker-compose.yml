@@ -62,6 +62,10 @@ services:
       - DB_PASSWORD=${DB_DATA_SERVER_PASSWORD}  # Change this to the appropriate password as needed
       - DB_NAME=${MYSQL_DATABASE}
 
+      - MAX_WORKERS=${MAX_WORKERS}
+      - JOB_BUFFER=${JOB_BUFFER}
+      - ADMIN_HASH=${ADMIN_HASH}
+
     depends_on:
       - db
     networks:
